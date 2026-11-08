@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Apply to Strength SMP</title>
+	<meta name="description" content="Apply to join the Strength SMP Minecraft community.">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta charset="utf-8">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="css/stylesheet.css">
+</head>
+<body class="content-page">
+	<div id="tsparticles"></div>
+
+	<div class="container">
+		<header class="community-header">
+			<a class="back-link" href="index.html">&larr; Back to home</a>
+			<div class="logo">
+				<img src="img/logo.png" alt="Strength SMP logo">
+			</div>
+		</header>
+
+		<main class="community-content">
+			<section class="content-section" aria-labelledby="application-heading">
+				<div class="section-heading">
+					<p class="section-kicker">Your next adventure starts here</p>
+					<h1 id="application-heading">Apply to Strength SMP</h1>
+					<p class="section-description">Tell us a little about yourself and why you would like to join.</p>
+				</div>
+
+				<div class="application-card">
+					<form class="application-form" id="application-form">
+						<div class="form-field">
+							<label for="ign">Minecraft In-Game Name (IGN)</label>
+							<input id="ign" name="ign" type="text" autocomplete="off" maxlength="32" required>
+						</div>
+
+						<div class="form-field">
+							<label for="age">What is your age?</label>
+							<input id="age" name="age" type="number" min="1" max="120" required>
+						</div>
+
+						<div class="form-field">
+							<label for="member-type">Are you a YouTube Creator or General Member?</label>
+							<select id="member-type" name="memberType" required>
+								<option value="" disabled selected>Select one</option>
+								<option value="YouTube Creator">YouTube Creator</option>
+								<option value="General Member">General Member</option>
+							</select>
+						</div>
+
+						<div class="form-field">
+							<label for="youtube-link">YouTube Channel Link <span class="form-hint">(if applicable)</span></label>
+							<input id="youtube-link" name="ytLink" type="url" maxlength="300" placeholder="https://www.youtube.com/@yourchannel">
+						</div>
+
+						<div class="form-field full-width">
+							<label for="reason">Why do you want to join Strength SMP?</label>
+							<textarea id="reason" name="reason" rows="5" maxlength="2000" required></textarea>
+						</div>
+
+						<div class="form-field full-width">
+							<label for="discord-user">Discord Username / Tag</label>
+							<input id="discord-user" name="discordUser" type="text" maxlength="64" autocomplete="off" placeholder="username or username#1234" required>
+						</div>
+
+						<div class="form-field full-width">
+							<label for="discord-id">Discord User ID <span class="form-hint">(optional)</span></label>
+							<input id="discord-id" name="discordId" type="text" inputmode="numeric" pattern="[0-9]{17,20}" maxlength="20" autocomplete="off" placeholder="Optional — helps the bot DM you faster" aria-describedby="discord-id-hint">
+							<span class="form-hint" id="discord-id-hint">Adding your ID lets the bot contact you directly. Enable Developer Mode in Discord, then right-click your profile and choose Copy User ID.</span>
+						</div>
+
+						<fieldset class="form-field form-fieldset full-width">
+							<legend class="form-legend">Do you agree to follow all server rules &amp; guidelines?</legend>
+							<div class="radio-options">
+								<label class="radio-option"><input type="radio" name="rules" value="Yes" required> Yes</label>
+								<label class="radio-option"><input type="radio" name="rules" value="No"> No</label>
+							</div>
+						</fieldset>
+
+						<fieldset class="form-field form-fieldset full-width">
+							<legend class="form-legend">Are you currently in our official Discord Server?</legend>
+							<div class="radio-options">
+								<label class="radio-option"><input type="radio" name="inDiscord" value="Yes" required> Yes</label>
+								<label class="radio-option"><input type="radio" name="inDiscord" value="No"> No</label>
+							</div>
+						</fieldset>
+
+						<div class="form-actions">
+							<button class="submit-button" id="submit-button" type="submit">Submit application</button>
+							<p class="form-hint">The Node.js bot server must be running to receive this application.</p>
+						</div>
+						<div class="form-notice" id="form-notice" role="status" aria-live="polite"></div>
+					</form>
+				</div>
+			</section>
+		</main>
+	</div>
+
+	<script src="js/firefly.js" type="text/javascript"></script>
+	<script src="js/main.js" type="text/javascript"></script>
+	<script>
+		const applicationForm = document.getElementById("application-form");
+		const memberType = document.getElementById("member-type");
+		const youtubeLink = document.getElementById("youtube-link");
+		const submitButton = document.getElementById("submit-button");
+		const formNotice = document.getElementById("form-notice");
+
+		memberType.addEventListener("change", () => {
+			youtubeLink.required = memberType.value === "YouTube Creator";
+		});
+
+		applicationForm.addEventListener("submit", async (event) => {
+			event.preventDefault();
+			formNotice.className = "form-notice";
+			formNotice.textContent = "";
+
+			if (applicationForm.elements.rules.value !== "Yes") {
+				formNotice.textContent = "You must agree to follow the server rules and guidelines to apply.";
+				formNotice.classList.add("is-visible", "is-error");
+				return;
+			}
+
+			submitButton.disabled = true;
+			submitButton.textContent = "Submitting...";
+
+			try {
+				const response = await fetch("http://localhost:3000/submit-application", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(Object.fromEntries(new FormData(applicationForm).entries()))
+				});
+				const result = await response.json();
+				if (!response.ok) {
+					throw new Error(result.message || result.error || "Application submission failed.");
+				}
+
+				formNotice.textContent = "Thanks! Your application has been submitted.";
+				formNotice.classList.add("is-visible", "is-success");
+				applicationForm.reset();
+				youtubeLink.required = false;
+			} catch (error) {
+				formNotice.textContent = error.message || "We couldn't submit your application right now. Please try again later or contact us on Discord.";
+				formNotice.classList.add("is-visible", "is-error");
+			} finally {
+				submitButton.disabled = false;
+				submitButton.textContent = "Submit application";
+			}
+		});
+	</script>
+</body>
+</html>
